@@ -2,31 +2,33 @@ import React, { useEffect, useState } from 'react';
 
 import Header from '../../components/Header';
 import api from '../../services/api';
-import Food, { FoodType } from '../../components/Food';
-import ModalAddFood, { FormData } from '../../components/ModalAddFood';
+import Food from '../../components/Food';
+import ModalAddFood from '../../components/ModalAddFood';
 import ModalEditFood from '../../components/ModalEditFood';
 import { FoodsContainer } from './styles';
 
-interface DashboardData {
-  foods: FoodType[],
-  editingFood: FoodType,
-  modalOpen: boolean,
-  editModalOpen: boolean,
+export type FoodType = {
+  id: number,
+  name: string,
+  description: string,
+  price: string,
+  available: boolean,
+  image: string,
 }
 
+export type FormData = Omit<FoodType, "id">;
+
 export default function Dashboard() {
-  const [dashboardData, setDashboardData] = useState<DashboardData>({
-    foods: [],
-    editingFood: {} as FoodType,
-    modalOpen: false,
-    editModalOpen: false,
-  });
+  const [foods, setFoods] = useState<FoodType[]>([]);
+  const [editingFood, setEditingFood] = useState<FoodType>({} as FoodType);
+  const [modalOpen, setModalOpen] = useState<boolean>(false);
+  const [editModalOpen, setEditModalOpen] = useState<boolean>(false);
 
   useEffect(() => {
     (async () => {
       const response = await api.get('/foods');
 
-      setDashboardData({ foods: response.data, editingFood: {} as FoodType, modalOpen: false, editModalOpen: false })
+      setFoods(response.data);
     })()
   }, [])
 
@@ -37,7 +39,7 @@ export default function Dashboard() {
         available: true,
       });
 
-      setDashboardData({ ...dashboardData, foods: [ ...dashboardData.foods, response.data] });
+      setFoods([ ...foods, response.data ]);
     } catch (err) {
       console.log(err);
     }
@@ -46,15 +48,15 @@ export default function Dashboard() {
   const handleUpdateFood = async (food: FoodType) => {
     try {
       const foodUpdated = await api.put(
-        `/foods/${dashboardData.editingFood.id}`,
-        { ...dashboardData.editingFood, ...food },
+        `/foods/${editingFood.id}`,
+        { ...editingFood, ...food },
       );
 
-      const foodsUpdated = dashboardData.foods.map(f =>
+      const foodsUpdated = foods.map(f =>
         f.id !== foodUpdated.data.id ? f : foodUpdated.data,
       );
 
-      setDashboardData({ ...dashboardData, foods: foodsUpdated });
+      setFoods(foodsUpdated);
     } catch (err) {
       console.log(err);
     }
@@ -63,41 +65,42 @@ export default function Dashboard() {
   const handleDeleteFood = async (id: number) => {
     await api.delete(`/foods/${id}`);
 
-    const foodsFiltered = dashboardData.foods.filter(food => food.id !== id);
+    const foodsFiltered = foods.filter(food => food.id !== id);
 
-    setDashboardData({ ...dashboardData, foods: foodsFiltered });
+    setFoods(foodsFiltered);
   }
 
   const toggleModal = () => {
-    setDashboardData({ ...dashboardData, modalOpen: !dashboardData.modalOpen });
+    setModalOpen(!modalOpen);
   }
 
   const toggleEditModal = () => {
-    setDashboardData({ ...dashboardData, editModalOpen: !dashboardData.editModalOpen });
+    setEditModalOpen(!editModalOpen);
   }
 
   const handleEditFood = (food: FoodType) => {
-    setDashboardData({ ...dashboardData, editingFood: food, editModalOpen: true });
+    setEditingFood(food);
+    setEditModalOpen(true);
   }
   
   return (
     <>
       <Header openModal={toggleModal} />
       <ModalAddFood
-        isOpen={dashboardData.modalOpen}
+        isOpen={modalOpen}
         setIsOpen={toggleModal}
         handleAddFood={handleAddFood}
       />
       <ModalEditFood
-        isOpen={dashboardData.editModalOpen}
+        isOpen={editModalOpen}
         setIsOpen={toggleEditModal}
-        editingFood={dashboardData.editingFood}
+        editingFood={editingFood}
         handleUpdateFood={handleUpdateFood}
       />
 
       <FoodsContainer data-testid="foods-list">
-        {dashboardData.foods &&
-          dashboardData.foods.map(food => (
+        {foods &&
+          foods.map(food => (
             <Food
               key={food.id}
               food={food}

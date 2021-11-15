@@ -5,7 +5,15 @@ import { SubmitHandler, FormHandles } from '@unform/core'
 import { Form } from './styles';
 import Modal from '../Modal';
 import Input from '../Input';
-import { FoodType } from '../Food'
+
+export type FoodType = {
+  id: number,
+  name: string,
+  description: string,
+  price: string,
+  available: boolean,
+  image: string,
+}
 
 interface ModalEditFoodProps {
   isOpen: boolean;
